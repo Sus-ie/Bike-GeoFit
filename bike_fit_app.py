@@ -94,6 +94,10 @@ elif riding_position == "Aggressive (Racing)":
                                   (data_filtered['Reach'] >= data_filtered['Reach'].quantile(0.4)) &
                                   (data_filtered['Head Tube Angle'] >= 72) & (data_filtered['Head Tube Angle'] <= 76)]
 
+# Re-filter the table based on closest frame size dynamically
+filtered_data_by_height = data[(data['Frame Size'].str.upper() == closest_frame_size) &
+                               (data['Category'].str.lower() == riding_style.lower())]
+
 # Display Results
 st.header("Recommended Bikes Based on Your Preferences")
 if closest_frame_size:
@@ -101,15 +105,18 @@ if closest_frame_size:
 else:
     st.warning("No matching or close frame size found based on height and category.")
 
-if data_filtered.empty:
+# Expanded display of the recommendation table
+st.markdown("<style>div[data-testid=\"stDataFrame\"] div[role=\"grid\"] {height: 600px !important;}</style>", unsafe_allow_html=True)
+
+if filtered_data_by_height.empty:
     st.error("No exact matches found. Displaying top 5 closest available bikes (relaxed criteria, unique models):")
     fallback_recommendations = data[(data['Category'].str.lower() == riding_style.lower())]
     fallback_recommendations = fallback_recommendations.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
-    st.dataframe(fallback_recommendations)
+    st.dataframe(fallback_recommendations, height=600)
 else:
-    top_recommendations = data_filtered.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
+    top_recommendations = filtered_data_by_height.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
     st.subheader("Top 5 Recommended Bikes (Unique Models):")
-    st.dataframe(top_recommendations)
+    st.dataframe(top_recommendations, height=600)
 
 # Fit Adjustments Summary
 st.header("Fit Adjustments Summary")
