@@ -37,6 +37,22 @@ def map_height_to_frame_size(height):
     else:
         return 'XL'
 
+# Function to find the closest frame size if an exact match is not available
+def find_closest_frame_size(frame_size, available_sizes):
+    size_order = ['XXS', 'XS', 'S', 'M', 'L', 'XL']
+    if frame_size in available_sizes:
+        return frame_size
+    try:
+        index = size_order.index(frame_size)
+        for offset in range(1, len(size_order)):
+            if index - offset >= 0 and size_order[index - offset] in available_sizes:
+                return size_order[index - offset]
+            if index + offset < len(size_order) and size_order[index + offset] in available_sizes:
+                return size_order[index + offset]
+    except ValueError:
+        return None
+    return None
+
 # Title
 st.title("Bike Fit & Geometry Recommendation System")
 
@@ -50,10 +66,12 @@ riding_position = st.sidebar.selectbox("Preferred Riding Position (Optional):", 
 
 # Determine frame size based on height
 matched_frame_size = map_height_to_frame_size(height)
+available_sizes = data['Frame Size'].dropna().str.upper().unique().tolist()
+closest_frame_size = find_closest_frame_size(matched_frame_size, available_sizes)
 
-# Filter based on riding style and frame size
+# Filter based on riding style and closest frame size
 data_filtered = data[(data['Category'].str.lower() == riding_style.lower()) &
-                     (data['Frame Size'].str.upper() == matched_frame_size)]
+                     (data['Frame Size'].str.upper() == closest_frame_size)]
 
 # Inseam Validation
 data_filtered = data_filtered[data_filtered['Standover Height'] <= (inseam - 2)]
@@ -78,13 +96,15 @@ elif riding_position == "Aggressive (Racing)":
 
 # Display Results
 st.header("Recommended Bikes Based on Your Preferences")
-if matched_frame_size:
-    st.subheader(f"Best Frame Size for Your Height: **{matched_frame_size}**")
+if closest_frame_size:
+    st.subheader(f"Closest Matching Frame Size for Your Height: **{closest_frame_size}**")
 else:
-    st.warning("No matching frame size found based on height and category.")
+    st.warning("No matching or close frame size found based on height and category.")
 
 if data_filtered.empty:
-    st.error("No suitable bikes found based on your selected parameters.")
+    st.error("No exact matches found. Displaying top 3 closest available bikes:")
+    fallback_recommendations = data[(data['Category'].str.lower() == riding_style.lower())].head(3)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
+    st.dataframe(fallback_recommendations)
 else:
     top_recommendations = data_filtered[["Brand", "Model", "Frame Size"]].head(3).reset_index(drop=True)
     st.subheader("Top 3 Recommended Bikes:")
