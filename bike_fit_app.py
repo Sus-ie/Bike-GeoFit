@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 
-# Load the dataset with error handling
 @st.cache_data
 def load_data():
     try:
@@ -19,14 +18,14 @@ def load_data():
 # Load data
 data = load_data()
 
-# Display total number of bike options and rows
+# Show total number of bike options and rows
 st.sidebar.markdown(f"**Total Bikes Available:** {len(data)}")
 st.sidebar.markdown(f"**Unique Models Available:** {data['Model'].nunique() if 'Model' in data.columns else 'N/A'}")
 
 if data.empty:
     st.stop()
 
-# Function to map height ranges to frame sizes
+# Map out hight ranges to frame sizes
 def map_height_to_frame_size(height):
     if height < 155:
         return 'XXS'
@@ -41,7 +40,7 @@ def map_height_to_frame_size(height):
     else:
         return 'XL'
 
-# Function to find the closest frame size if an exact match is not available
+# Try and find the cloesest frame size if there is no exact match
 def find_closest_frame_size(frame_size, available_sizes):
     size_order = ['XXS', 'XS', 'S', 'M', 'L', 'XL']
     if frame_size in available_sizes:
@@ -57,10 +56,10 @@ def find_closest_frame_size(frame_size, available_sizes):
         return None
     return None
 
-# Title
+# App Sarts 
 st.title("Bike Fit & Geometry Recommendation System")
 
-# User Inputs
+# User input
 st.sidebar.header("User Input Parameters")
 height = st.sidebar.number_input("Rider's Height (cm):", min_value=100, max_value=220, value=170)
 inseam = st.sidebar.number_input("Rider's Inseam Length (cm):", min_value=50, max_value=120, value=75)
@@ -68,7 +67,7 @@ riding_style = st.sidebar.selectbox("Preferred Riding Style:", ["Road", "Mountai
 wheel_size_pref = st.sidebar.selectbox("Preferred Wheel Size (Optional):", ["Any", "27.5\"", "28\"", "29\""])
 riding_position = st.sidebar.selectbox("Preferred Riding Position (Optional):", ["No Preference", "Comfortable (Upright)", "Aggressive (Racing)"])
 
-# Determine frame size based on height
+#  frame size based on height
 matched_frame_size = map_height_to_frame_size(height)
 available_sizes = data['Frame Size'].dropna().str.upper().unique().tolist()
 closest_frame_size = find_closest_frame_size(matched_frame_size, available_sizes)
@@ -77,14 +76,14 @@ closest_frame_size = find_closest_frame_size(matched_frame_size, available_sizes
 data_filtered = data[(data['Category'].str.contains(riding_style, case=False, na=False)) &
                      (data['Frame Size'].str.upper() == closest_frame_size)]
 
-# Inseam Validation
+# validation
 data_filtered = data_filtered[data_filtered['Standover Height'] <= inseam]
 
-# Wheel Size Filtering
+# Wheel Size 
 if wheel_size_pref != "Any":
     data_filtered = data_filtered[data_filtered['Wheel Size'].str.contains(wheel_size_pref, na=False)]
 
-# Geometry Adjustments based on riding position if specified
+# Geometry Adjustments based on riding position if specified (googled this with ChatGPT)
 if riding_position == "Comfortable (Upright)":
     data_filtered = data_filtered[(data_filtered['Stack'] >= data_filtered['Stack'].quantile(0.4)) &
                                   (data_filtered['Reach'] <= data_filtered['Reach'].quantile(0.6)) &
@@ -98,14 +97,14 @@ elif riding_position == "Aggressive (Racing)":
 filtered_data_by_height = data[(data['Frame Size'].str.upper() == closest_frame_size) &
                                (data['Category'].str.contains(riding_style, case=False, na=False))]
 
-# Display Results
+# Show results
 st.header("Recommended Bikes Based on Your Preferences")
 if closest_frame_size:
     st.subheader(f"Closest Matching Frame Size for Your Height: **{closest_frame_size}**")
 else:
     st.warning("No matching or close frame size found based on height and category.")
 
-# Fully expanded display of the recommendation table
+# Fully expanded display 
 st.markdown("""
     <style>
     div[data-testid="stDataFrame"] div[role="grid"] {
