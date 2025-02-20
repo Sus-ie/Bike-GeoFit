@@ -7,11 +7,10 @@ import os
 @st.cache_data
 def load_data():
     try:
-        # Use a relative path for deployment compatibility
         file_path = 'geometrics_modifiedv3.csv'
         if not os.path.exists(file_path):
             st.error("The dataset file was not found. Please ensure 'geometrics_modifiedv3.csv' is in the same directory as this script.")
-            return pd.DataFrame()  # Return empty DataFrame if not found
+            return pd.DataFrame()
         return pd.read_csv(file_path, sep=None, engine='python')
     except Exception as e:
         st.error(f"Error loading data: {e}")
@@ -21,16 +20,22 @@ def load_data():
 data = load_data()
 
 if data.empty:
-    st.stop()  # Stop execution if data isn't loaded
+    st.stop()
 
-# Helper function to match the closest frame size
-def closest_frame_size(frame_size, available_sizes):
-    size_mapping = {'XXS': 1, 'XS': 2, 'S': 3, 'M': 4, 'L': 5, 'XL': 6}
-    available_numeric = [size_mapping.get(size, np.nan) for size in available_sizes if size in size_mapping]
-    if np.isnan(frame_size) or not available_numeric:
-        return None
-    closest_index = np.abs(np.array(available_numeric) - frame_size).argmin()
-    return available_sizes[closest_index]
+# Function to map height ranges to frame sizes
+def map_height_to_frame_size(height):
+    if height < 155:
+        return 'XXS'
+    elif 155 <= height < 165:
+        return 'XS'
+    elif 165 <= height < 170:
+        return 'S'
+    elif 170 <= height < 175:
+        return 'M'
+    elif 175 <= height < 185:
+        return 'L'
+    else:
+        return 'XL'
 
 # Title
 st.title("Bike Fit & Geometry Recommendation System")
@@ -42,20 +47,12 @@ inseam = st.sidebar.number_input("Rider's Inseam Length (cm):", min_value=50, ma
 riding_style = st.sidebar.selectbox("Preferred Riding Style:", ["Road", "Mountain", "Gravel", "Hybrid"])
 wheel_size_pref = st.sidebar.selectbox("Preferred Wheel Size (Optional):", ["Any", "27.5\"", "28\"", "29\""])
 
-# Frame Size Calculation
-if riding_style == "Road":
-    calc_frame_size = height * 0.665
-elif riding_style == "Mountain":
-    calc_frame_size = height * 0.225
-else:
-    calc_frame_size = height * 0.685
+# Determine frame size based on height
+matched_frame_size = map_height_to_frame_size(height)
 
-# Filter based on riding style
-data_filtered = data[data['Category'].str.lower() == riding_style.lower()]
-
-# Match closest frame size
-available_sizes = data_filtered['Frame Size'].dropna().unique().tolist()
-matched_frame_size = closest_frame_size(calc_frame_size / 10, available_sizes)  # Adjust for dataset scaling
+# Filter based on riding style and frame size
+data_filtered = data[(data['Category'].str.lower() == riding_style.lower()) &
+                     (data['Frame Size'].str.upper() == matched_frame_size)]
 
 # Inseam Validation
 data_filtered = data_filtered[data_filtered['Standover Height'] <= (inseam - 2)]
