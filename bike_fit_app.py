@@ -19,12 +19,6 @@ def load_data():
 # Load data
 data = load_data()
 
-# Debug Step 1: Check unique category names
-st.write("Available Categories:", data['Category'].unique())
-
-# Debug Step 2: Check available frame sizes for Gravel category
-st.write("Available Frame Sizes for Gravel:", data[data['Category'].str.contains('Gravel', case=False, na=False)]['Frame Size'].unique())
-
 # Display total number of bike options and rows
 st.sidebar.markdown(f"**Total Bikes Available:** {len(data)}")
 st.sidebar.markdown(f"**Unique Models Available:** {data['Model'].nunique() if 'Model' in data.columns else 'N/A'}")
