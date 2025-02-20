@@ -46,6 +46,7 @@ height = st.sidebar.number_input("Rider's Height (cm):", min_value=100, max_valu
 inseam = st.sidebar.number_input("Rider's Inseam Length (cm):", min_value=50, max_value=120, value=75)
 riding_style = st.sidebar.selectbox("Preferred Riding Style:", ["Road", "Mountain", "Gravel", "Hybrid"])
 wheel_size_pref = st.sidebar.selectbox("Preferred Wheel Size (Optional):", ["Any", "27.5\"", "28\"", "29\""])
+riding_position = st.sidebar.selectbox("Preferred Riding Position (Optional):", ["No Preference", "Comfortable (Upright)", "Aggressive (Racing)"])
 
 # Determine frame size based on height
 matched_frame_size = map_height_to_frame_size(height)
@@ -65,14 +66,12 @@ if wheel_size_pref != "Any":
 data_filtered['STR Ratio'] = data_filtered.apply(lambda x: x['Stack'] / x['Reach'] if x['Reach'] > 0 else np.nan, axis=1)
 data_filtered = data_filtered[(data_filtered['STR Ratio'] >= 1.4) & (data_filtered['STR Ratio'] <= 1.6)]
 
-# Geometry Adjustments
-riding_position = st.sidebar.selectbox("Preferred Riding Position:", ["Comfortable (Upright)", "Aggressive (Racing)"])
-
+# Geometry Adjustments based on riding position if specified
 if riding_position == "Comfortable (Upright)":
     data_filtered = data_filtered[(data_filtered['Stack'] >= data_filtered['Stack'].median()) &
                                   (data_filtered['Reach'] <= data_filtered['Reach'].median()) &
                                   (data_filtered['Head Tube Angle'] >= 70) & (data_filtered['Head Tube Angle'] <= 72)]
-else:
+elif riding_position == "Aggressive (Racing)":
     data_filtered = data_filtered[(data_filtered['Stack'] <= data_filtered['Stack'].median()) &
                                   (data_filtered['Reach'] >= data_filtered['Reach'].median()) &
                                   (data_filtered['Head Tube Angle'] >= 73) & (data_filtered['Head Tube Angle'] <= 75)]
@@ -87,7 +86,9 @@ else:
 if data_filtered.empty:
     st.error("No suitable bikes found based on your selected parameters.")
 else:
-    st.dataframe(data_filtered[["Brand", "Model", "Frame Size", "Category", "Wheel Size", "Reach", "Stack", "Head Tube Angle", "Standover Height", "Wheelbase"]].reset_index(drop=True))
+    top_recommendations = data_filtered[["Brand", "Model", "Frame Size"]].head(3).reset_index(drop=True)
+    st.subheader("Top 3 Recommended Bikes:")
+    st.dataframe(top_recommendations)
 
 # Fit Adjustments Summary
 st.header("Fit Adjustments Summary")
