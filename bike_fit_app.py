@@ -78,25 +78,21 @@ data_filtered = data[(data['Category'].str.lower() == riding_style.lower()) &
                      (data['Frame Size'].str.upper() == closest_frame_size)]
 
 # Inseam Validation
-data_filtered = data_filtered[data_filtered['Standover Height'] <= (inseam - 2)]
+data_filtered = data_filtered[data_filtered['Standover Height'] <= inseam]
 
 # Wheel Size Filtering
 if wheel_size_pref != "Any":
     data_filtered = data_filtered[data_filtered['Wheel Size'].str.contains(wheel_size_pref, na=False)]
 
-# Stack-to-Reach Ratio Calculation
-data_filtered['STR Ratio'] = data_filtered.apply(lambda x: x['Stack'] / x['Reach'] if x['Reach'] > 0 else np.nan, axis=1)
-data_filtered = data_filtered[(data_filtered['STR Ratio'] >= 1.4) & (data_filtered['STR Ratio'] <= 1.6)]
-
 # Geometry Adjustments based on riding position if specified
 if riding_position == "Comfortable (Upright)":
-    data_filtered = data_filtered[(data_filtered['Stack'] >= data_filtered['Stack'].median()) &
-                                  (data_filtered['Reach'] <= data_filtered['Reach'].median()) &
-                                  (data_filtered['Head Tube Angle'] >= 70) & (data_filtered['Head Tube Angle'] <= 72)]
+    data_filtered = data_filtered[(data_filtered['Stack'] >= data_filtered['Stack'].quantile(0.4)) &
+                                  (data_filtered['Reach'] <= data_filtered['Reach'].quantile(0.6)) &
+                                  (data_filtered['Head Tube Angle'] >= 69) & (data_filtered['Head Tube Angle'] <= 73)]
 elif riding_position == "Aggressive (Racing)":
-    data_filtered = data_filtered[(data_filtered['Stack'] <= data_filtered['Stack'].median()) &
-                                  (data_filtered['Reach'] >= data_filtered['Reach'].median()) &
-                                  (data_filtered['Head Tube Angle'] >= 73) & (data_filtered['Head Tube Angle'] <= 75)]
+    data_filtered = data_filtered[(data_filtered['Stack'] <= data_filtered['Stack'].quantile(0.6)) &
+                                  (data_filtered['Reach'] >= data_filtered['Reach'].quantile(0.4)) &
+                                  (data_filtered['Head Tube Angle'] >= 72) & (data_filtered['Head Tube Angle'] <= 76)]
 
 # Display Results
 st.header("Recommended Bikes Based on Your Preferences")
@@ -106,12 +102,13 @@ else:
     st.warning("No matching or close frame size found based on height and category.")
 
 if data_filtered.empty:
-    st.error("No exact matches found. Displaying top 3 closest available bikes:")
-    fallback_recommendations = data[(data['Category'].str.lower() == riding_style.lower())].head(3)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
+    st.error("No exact matches found. Displaying top 5 closest available bikes (relaxed criteria, unique models):")
+    fallback_recommendations = data[(data['Category'].str.lower() == riding_style.lower())]
+    fallback_recommendations = fallback_recommendations.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
     st.dataframe(fallback_recommendations)
 else:
-    top_recommendations = data_filtered[["Brand", "Model", "Frame Size"]].head(3).reset_index(drop=True)
-    st.subheader("Top 3 Recommended Bikes:")
+    top_recommendations = data_filtered.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
+    st.subheader("Top 5 Recommended Bikes (Unique Models):")
     st.dataframe(top_recommendations)
 
 # Fit Adjustments Summary
