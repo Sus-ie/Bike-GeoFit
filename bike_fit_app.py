@@ -19,6 +19,10 @@ def load_data():
 # Load data
 data = load_data()
 
+# Display total number of bike options and rows
+st.sidebar.markdown(f"**Total Bikes Available:** {len(data)}")
+st.sidebar.markdown(f"**Unique Models Available:** {data['Model'].nunique() if 'Model' in data.columns else 'N/A'}")
+
 if data.empty:
     st.stop()
 
