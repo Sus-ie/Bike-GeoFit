@@ -73,6 +73,16 @@ matched_frame_size = map_height_to_frame_size(height)
 available_sizes = data['Frame Size'].dropna().str.upper().unique().tolist()
 closest_frame_size = find_closest_frame_size(matched_frame_size, available_sizes)
 
+# Filter based on riding style and closest frame size
+data_filtered = data[(data['Category'].str.contains(riding_style, case=False, na=False)) &
+                     (data['Frame Size'].str.upper() == closest_frame_size)]
+
+# Inseam Validation
+data_filtered = data_filtered[data_filtered['Standover Height'] <= inseam]
+
+# Wheel Size Filtering
+if wheel_size_pref != "Any":
+    data_filtered = data_filtered[data_filtered['Wheel Size'].str.contains(wheel_size_pref, na=False)]
 
 # Geometry Adjustments based on riding position if specified
 if riding_position == "Comfortable (Upright)":
@@ -83,12 +93,10 @@ elif riding_position == "Aggressive (Racing)":
     data_filtered = data_filtered[(data_filtered['Stack'] <= data_filtered['Stack'].quantile(0.6)) &
                                   (data_filtered['Reach'] >= data_filtered['Reach'].quantile(0.4)) &
                                   (data_filtered['Head Tube Angle'] >= 72) & (data_filtered['Head Tube Angle'] <= 76)]
-st.write("After Riding Position Filter:", data_filtered.shape)
 
 # Re-filter the table based on closest frame size dynamically
 filtered_data_by_height = data[(data['Frame Size'].str.upper() == closest_frame_size) &
                                (data['Category'].str.contains(riding_style, case=False, na=False))]
-st.write("Final Filtered Data:", filtered_data_by_height.shape)
 
 # Display Results
 st.header("Recommended Bikes Based on Your Preferences")
