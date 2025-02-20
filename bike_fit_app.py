@@ -1,14 +1,27 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 
-# Load the dataset
+# Load the dataset with error handling
 @st.cache_data
 def load_data():
-    file_path = '/Users/susanakohlhaas/Documents/IronHack/Final Project/geometrics_modifiedv3.csv'
-    return pd.read_csv(file_path, sep=None, engine='python')
+    try:
+        # Use a relative path for deployment compatibility
+        file_path = 'geometrics_modifiedv3.csv'
+        if not os.path.exists(file_path):
+            st.error("The dataset file was not found. Please ensure 'geometrics_modifiedv3.csv' is in the same directory as this script.")
+            return pd.DataFrame()  # Return empty DataFrame if not found
+        return pd.read_csv(file_path, sep=None, engine='python')
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return pd.DataFrame()
 
+# Load data
 data = load_data()
+
+if data.empty:
+    st.stop()  # Stop execution if data isn't loaded
 
 # Helper function to match the closest frame size
 def closest_frame_size(frame_size, available_sizes):
@@ -20,7 +33,7 @@ def closest_frame_size(frame_size, available_sizes):
     return available_sizes[closest_index]
 
 # Title
-st.title("🚴‍♂️ Bike Fit & Geometry Recommendation System")
+st.title("Bike Fit & Geometry Recommendation System")
 
 # User Inputs
 st.sidebar.header("User Input Parameters")
@@ -68,23 +81,23 @@ else:
                                   (data_filtered['Head Tube Angle'] >= 73) & (data_filtered['Head Tube Angle'] <= 75)]
 
 # Display Results
-st.header("📋 Recommended Bikes Based on Your Preferences")
+st.header("Recommended Bikes Based on Your Preferences")
 if matched_frame_size:
-    st.subheader(f"✅ Best Frame Size for Your Height: **{matched_frame_size}**")
+    st.subheader(f"Best Frame Size for Your Height: **{matched_frame_size}**")
 else:
-    st.warning("⚠️ No matching frame size found based on height and category.")
+    st.warning("No matching frame size found based on height and category.")
 
 if data_filtered.empty:
-    st.error("🚫 No suitable bikes found based on your selected parameters.")
+    st.error("No suitable bikes found based on your selected parameters.")
 else:
     st.dataframe(data_filtered[["Brand", "Model", "Frame Size", "Category", "Wheel Size", "Reach", "Stack", "Head Tube Angle", "Standover Height", "Wheelbase"]].reset_index(drop=True))
 
 # Fit Adjustments Summary
-st.header("🔧 Fit Adjustments Summary")
+st.header("Fit Adjustments Summary")
 seat_height = inseam * 0.883
 handlebar_reach = height * 0.45
 
 st.markdown(f"- **Recommended Seat Height:** {seat_height:.1f} cm")
 st.markdown(f"- **Recommended Handlebar Reach:** {handlebar_reach:.1f} cm")
 
-st.success("🎉 All recommendations are based on optimal geometry and fit for your preferences!")
+st.success("All recommendations are based on optimal geometry and fit for your preferences!")
