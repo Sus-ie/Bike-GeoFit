@@ -105,18 +105,25 @@ if closest_frame_size:
 else:
     st.warning("No matching or close frame size found based on height and category.")
 
-# Expanded display of the recommendation table
-st.markdown("<style>div[data-testid=\"stDataFrame\"] div[role=\"grid\"] {height: 600px !important;}</style>", unsafe_allow_html=True)
+# Fully expanded display of the recommendation table
+st.markdown("""
+    <style>
+    div[data-testid="stDataFrame"] div[role="grid"] {
+        height: calc(100vh - 250px) !important;
+        width: 100% !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 if filtered_data_by_height.empty:
     st.error("No exact matches found. Displaying top 5 closest available bikes (relaxed criteria, unique models):")
     fallback_recommendations = data[(data['Category'].str.lower() == riding_style.lower())]
     fallback_recommendations = fallback_recommendations.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
-    st.dataframe(fallback_recommendations, height=600)
+    st.dataframe(fallback_recommendations, use_container_width=True)
 else:
     top_recommendations = filtered_data_by_height.drop_duplicates(subset=["Model"]).head(5)[["Brand", "Model", "Frame Size"]].reset_index(drop=True)
     st.subheader("Top 5 Recommended Bikes (Unique Models):")
-    st.dataframe(top_recommendations, height=600)
+    st.dataframe(top_recommendations, use_container_width=True)
 
 # Fit Adjustments Summary
 st.header("Fit Adjustments Summary")
