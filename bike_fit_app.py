@@ -73,23 +73,6 @@ matched_frame_size = map_height_to_frame_size(height)
 available_sizes = data['Frame Size'].dropna().str.upper().unique().tolist()
 closest_frame_size = find_closest_frame_size(matched_frame_size, available_sizes)
 
-st.write(f"Matched Frame Size: {matched_frame_size}")
-st.write(f"Closest Frame Size: {closest_frame_size}")
-
-# Debug Step 3: Filter by category and frame size
-data_filtered = data[(data['Category'].str.contains(riding_style, case=False, na=False)) &
-                     (data['Frame Size'].str.upper() == closest_frame_size)]
-st.write("After Category and Frame Size Filter:", data_filtered.shape)
-
-# Debug Step 4: Inseam Validation
-st.write("Inseam Filter Threshold:", inseam)
-data_filtered = data_filtered[data_filtered['Standover Height'] <= inseam]
-st.write("After Inseam Filter:", data_filtered.shape)
-
-# Debug Step 5: Wheel Size Filtering
-if wheel_size_pref != "Any":
-    data_filtered = data_filtered[data_filtered['Wheel Size'].str.contains(wheel_size_pref, na=False)]
-st.write("After Wheel Size Filter:", data_filtered.shape)
 
 # Geometry Adjustments based on riding position if specified
 if riding_position == "Comfortable (Upright)":
